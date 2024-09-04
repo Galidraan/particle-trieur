@@ -285,7 +285,7 @@ public class CNNTrainingScript {
         if (!b) {
             return "None";
         } else {
-            return Files.createTempDirectory("miso_").toString();
+            return quote(Files.createTempDirectory("miso_").toString());
         }
     }
 }
