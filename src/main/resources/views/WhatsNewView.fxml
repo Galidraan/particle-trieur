@@ -17,6 +17,8 @@
             prefHeight="360.0" prefWidth="640.0">
     <VBox spacing="7.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
         <children>
+            <Label text="3.0.5e" styleClass="subheader"/>
+            <Label wrapText="true">Update miso version. Number of python processes when training has been reduced to avoir memory issues</Label>
             <Label text="3.0.5d" styleClass="subheader"/>
             <Label wrapText="true">fix syntax error in temp file generated when using Create training set on disk instead of memory option when launching CNN training</Label>
             <Label text="3.0.5c" styleClass="subheader"/>
