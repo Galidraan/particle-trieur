@@ -154,13 +154,13 @@ public class MorphologyProcessor {
         m.circularity = 4.0 * Math.PI * m.area / Math.pow(m.perimeter, 2);
         m.perimeterToAreaRatio = m.perimeter / m.area;
         m.equivalentDiameter = Math.sqrt(4.0 * m.area / Math.PI);
-        m.equivalentSphericalDiameter = 2.0 * Math.sqrt(m.area / Math.PI);
+//        m.equivalentSphericalDiameter = 2.0 * Math.sqrt(m.area / Math.PI);
 
         Rect boundingRectangle = Imgproc.boundingRect(contour);
         m.aspectRatio = (double)boundingRectangle.width / boundingRectangle.height;
         m.areaToBoundingRectangleArea = m.area / (boundingRectangle.width * boundingRectangle.height);
 
-        double[] dHuInvariants = computeHuInvariants(contour);
+        double[] dHuInvariants = computeHuInvariantMoments(contour);
         m.Husmoment1 = dHuInvariants[0];
         m.Husmoment2 = dHuInvariants[1];
         m.Husmoment3 = dHuInvariants[2];
@@ -169,58 +169,215 @@ public class MorphologyProcessor {
         m.Husmoment6 = dHuInvariants[5];
         m.Husmoment7 = dHuInvariants[6];
 
+
+        double[] FeretDiameters = computeFeretDiameters(contour);
+        m.MaxFeret = FeretDiameters[0];
+        m.MinFeret = FeretDiameters[1];
+
         return m;
     }
 
-    private static double[] computeHuInvariants(MatOfPoint contour){
+//    private static double[] computeHuInvariants(MatOfPoint contour){
+//        Moments p = Imgproc.moments(contour);
+//        double
+//                n20 = p.get_nu20(),
+//                n02 = p.get_nu02(),
+//                n30 = p.get_nu30(),
+//                n12 = p.get_nu12(),
+//                n21 = p.get_nu21(),
+//                n03 = p.get_nu03(),
+//                n11 = p.get_nu11();
+//
+//        double[] dHuInvariants = new double[8];
+//
+//        //First moment
+//        dHuInvariants[0] = n20 + n02;
+//
+//        //Second moment
+//        dHuInvariants[1] = Math.pow((n20 - n02), 2) + Math.pow(2 * n11, 2);
+//
+//        //Third moment
+//        dHuInvariants[2] = Math.pow(n30 - (3 * (n12)), 2)
+//                + Math.pow((3 * n21 - n03), 2);
+//
+//        //Fourth moment
+//        dHuInvariants[3] = Math.pow((n30 + n12), 2) + Math.pow((n12 + n03), 2);
+//
+//        //Fifth moment
+//        dHuInvariants[4] = (n30 - 3 * n12) * (n30 + n12)
+//                * (Math.pow((n30 + n12), 2) - 3 * Math.pow((n21 + n03), 2))
+//                + (3 * n21 - n03) * (n21 + n03)
+//                * (3 * Math.pow((n30 + n12), 2) - Math.pow((n21 + n03), 2));
+//
+//        //Sixth moment
+//        dHuInvariants[5] = (n20 - n02)
+//                * (Math.pow((n30 + n12), 2) - Math.pow((n21 + n03), 2))
+//                + 4 * n11 * (n30 + n12) * (n21 + n03);
+//
+//        //Seventh moment
+//        dHuInvariants[6] = (3 * n21 - n03) * (n30 + n12)
+//                * (Math.pow((n30 + n12), 2) - 3 * Math.pow((n21 + n03), 2))
+//                + (n30 - 3 * n12) * (n21 + n03)
+//                * (3 * Math.pow((n30 + n12), 2) - Math.pow((n21 + n03), 2));
+//
+//        //Eighth moment
+//        dHuInvariants[7] = n11 * (Math.pow((n30 + n12), 2) - Math.pow((n03 + n21), 2))
+//                - (n20 - n02) * (n30 + n12) * (n03 + n21);
+//
+//        return dHuInvariants;
+//
+//    }
+
+    /**
+     * Compute Hu's invariant moments from a contour
+     * Hu moments are shape descriptors that are invariant to scale, translation, and rotation.
+     * @param contour The input contour
+     * @return HuMoments An array of 7 standard Hu's invariant moments
+     */
+    private static double[] computeHuInvariantMoments(MatOfPoint contour) {
+        if (contour == null || contour.empty()) {
+            throw new IllegalArgumentException("Contour cannot be null or empty");
+        }
+
+        // Calculate moments
         Moments p = Imgproc.moments(contour);
-        double
-                n20 = p.get_nu20(),
-                n02 = p.get_nu02(),
-                n30 = p.get_nu30(),
-                n12 = p.get_nu12(),
-                n21 = p.get_nu21(),
-                n03 = p.get_nu03(),
-                n11 = p.get_nu11();
 
-        double[] dHuInvariants = new double[8];
+        // Extract normalized central moments
+        double n20 = p.get_nu20();
+        double n02 = p.get_nu02();
+        double n30 = p.get_nu30();
+        double n12 = p.get_nu12();
+        double n21 = p.get_nu21();
+        double n03 = p.get_nu03();
+        double n11 = p.get_nu11();
 
-        //First moment
-        dHuInvariants[0] = n20 + n02;
+        // Pre-compute
+        double n30_plus_n12 = n30 + n12;
+        double n21_plus_n03 = n21 + n03;
+        double sqr_n30_plus_n12 = Math.pow(n30_plus_n12, 2);
+        double sqr_n21_plus_n03 = Math.pow(n21_plus_n03, 2);
 
-        //Second moment
-        dHuInvariants[1] = Math.pow((n20 - n02), 2) + Math.pow(2 * n11, 2);
+        double n30_minus_3n12 = n30 - 3 * n12;
+        double n3n21_minus_n03 = 3 * n21 - n03;
 
-        //Third moment
-        dHuInvariants[2] = Math.pow(n30 - (3 * (n12)), 2)
-                + Math.pow((3 * n21 - n03), 2);
+        // Initialize array for Hu moments
+        double[] HuMoments = new double[7];
 
-        //Fourth moment
-        dHuInvariants[3] = Math.pow((n30 + n12), 2) + Math.pow((n12 + n03), 2);
+        // First moment: I₁ = η₂₀ + η₀₂
+        HuMoments[0] = n20 + n02;
 
-        //Fifth moment
-        dHuInvariants[4] = (n30 - 3 * n12) * (n30 + n12)
-                * (Math.pow((n30 + n12), 2) - 3 * Math.pow((n21 + n03), 2))
-                + (3 * n21 - n03) * (n21 + n03)
-                * (3 * Math.pow((n30 + n12), 2) - Math.pow((n21 + n03), 2));
+        // Second moment: I₂ = (η₂₀ - η₀₂)² + 4η₁₁²
+        HuMoments[1] = Math.pow(n20 - n02, 2) + 4 * Math.pow(n11, 2);
 
-        //Sixth moment
-        dHuInvariants[5] = (n20 - n02)
-                * (Math.pow((n30 + n12), 2) - Math.pow((n21 + n03), 2))
-                + 4 * n11 * (n30 + n12) * (n21 + n03);
+        // Third moment: I₃ = (η₃₀ - 3η₁₂)² + (3η₂₁ - η₀₃)²
+        HuMoments[2] = Math.pow(n30_minus_3n12, 2) + Math.pow(n3n21_minus_n03, 2);
 
-        //Seventh moment
-        dHuInvariants[6] = (3 * n21 - n03) * (n30 + n12)
-                * (Math.pow((n30 + n12), 2) - 3 * Math.pow((n21 + n03), 2))
-                + (n30 - 3 * n12) * (n21 + n03)
-                * (3 * Math.pow((n30 + n12), 2) - Math.pow((n21 + n03), 2));
+        // Fourth moment: I₄ = (η₃₀ + η₁₂)² + (η₂₁ + η₀₃)²
+        HuMoments[3] = sqr_n30_plus_n12 + sqr_n21_plus_n03;
 
-        //Eighth moment
-        dHuInvariants[7] = n11 * (Math.pow((n30 + n12), 2) - Math.pow((n03 + n21), 2))
-                - (n20 - n02) * (n30 + n12) * (n03 + n21);
+        // Fifth moment: I₅ = (η₃₀ - 3η₁₂)(η₃₀ + η₁₂)[(η₃₀ + η₁₂)² - 3(η₂₁ + η₀₃)²] + (3η₂₁ - η₀₃)(η₂₁ + η₀₃)[3(η₃₀ + η₁₂)² - (η₂₁ + η₀₃)²]
+        HuMoments[4] = n30_minus_3n12 * n30_plus_n12 * (sqr_n30_plus_n12 - 3 * sqr_n21_plus_n03) +
+                n3n21_minus_n03 * n21_plus_n03 * (3 * sqr_n30_plus_n12 - sqr_n21_plus_n03);
 
-        return dHuInvariants;
+        // Sixth moment: I₆ = (η₂₀ - η₀₂)[(η₃₀ + η₁₂)² - (η₂₁ + η₀₃)²] + 4η₁₁(η₃₀ + η₁₂)(η₂₁ + η₀₃)
+        HuMoments[5] = (n20 - n02) * (sqr_n30_plus_n12 - sqr_n21_plus_n03) +
+                4 * n11 * n30_plus_n12 * n21_plus_n03;
 
+        // Seventh moment: I₇ = (3η₂₁ - η₀₃)(η₃₀ + η₁₂)[(η₃₀ + η₁₂)² - 3(η₂₁ + η₀₃)²] - (η₃₀ - 3η₁₂)(η₂₁ + η₀₃)[3(η₃₀ + η₁₂)² - (η₂₁ + η₀₃)²]
+        HuMoments[6] = n3n21_minus_n03 * n30_plus_n12 * (sqr_n30_plus_n12 - 3 * sqr_n21_plus_n03) -
+                n30_minus_3n12 * n21_plus_n03 * (3 * sqr_n30_plus_n12 - sqr_n21_plus_n03);
+
+        // Optional: Apply logarithmic scaling to make values more comparable
+        // Uncomment if needed
+        /*
+        for (int i = 0; i < huMoments.length; i++) {
+            if (huMoments[i] != 0) {
+                huMoments[i] = -Math.copySign(Math.log10(Math.abs(huMoments[i])), huMoments[i]);
+            }
+        }
+        */
+
+        return HuMoments;
+    }
+
+
+    /**
+     * Compute Feret Diameters using Convex Hull method
+     * @param contour the input contour
+     * @return An array of maximum and minimum Feret diameters
+     */
+    public static double[] computeFeretDiameters(MatOfPoint contour){
+        if (contour == null || contour.empty()) {
+            throw new IllegalArgumentException("Contour cannot be null or empty");
+        }
+
+        // Create convex hull indices of the contour
+        MatOfInt hullIndices = new MatOfInt();
+        Imgproc.convexHull(contour, hullIndices);
+
+        Point[] contourPoints = contour.toArray();
+        int[] indices = hullIndices.toArray();
+        Point[] hullPoints = new Point[indices.length];
+        for (int i = 0; i < indices.length; i++) {
+            hullPoints[i] = contourPoints[indices[i]];
+        }
+
+        if (hullPoints.length < 2) {
+            return new double[] {0.0, 0.0};
+        }
+
+        // Find the maximum Feret diameter and its angle
+        double maxDiameter = 0.0;
+        Point maxPoint1 = null;
+        Point maxPoint2 = null;
+
+        for (int i = 0; i < hullPoints.length; i++) {
+            for (int j = i + 1; j < hullPoints.length; j++) {
+                double dx = hullPoints[j].x - hullPoints[i].x;
+                double dy = hullPoints[j].y - hullPoints[i].y;
+                double distance = Math.sqrt(dx * dx + dy * dy);
+
+                if (distance > maxDiameter) {
+                    maxDiameter = distance;
+                    maxPoint1 = hullPoints[i];
+                    maxPoint2 = hullPoints[j];
+                }
+            }
+        }
+
+        double maxDiameterDx = maxPoint2.x - maxPoint1.x;
+        double maxDiameterDy = maxPoint2.y - maxPoint1.y;
+
+        double length = Math.sqrt(maxDiameterDx * maxDiameterDx + maxDiameterDy * maxDiameterDy);
+        if (length < 1e-10) {
+            return new double[] {0.0, 0.0};
+        }
+
+        // Create a perpendicular unit vector (rotate 90 degrees)
+        double perpendicularDx = -maxDiameterDy / length;
+        double perpendicularDy = maxDiameterDx / length;
+
+        // Find the minimum Feret diameter using the perpendicular direction
+        double minDiameter = Double.MAX_VALUE;
+
+        for (int i = 0; i < hullPoints.length; i++) {
+            // Project all points onto the perpendicular direction
+            double minProj = Double.MAX_VALUE;
+            double maxProj = Double.MIN_VALUE;
+
+            for (int j = 0; j < hullPoints.length; j++) {
+                // Calculate the projection of point j onto the perpendicular vector
+                double proj = perpendicularDx * hullPoints[j].x + perpendicularDy * hullPoints[j].y;
+                minProj = Math.min(minProj, proj);
+                maxProj = Math.max(maxProj, proj);
+            }
+
+            // The width in this direction is the difference between max and min projections
+            double width = maxProj - minProj;
+            minDiameter = Math.min(minDiameter, width);
+        }
+
+        return new double[] {maxDiameter, minDiameter};
     }
 
 }

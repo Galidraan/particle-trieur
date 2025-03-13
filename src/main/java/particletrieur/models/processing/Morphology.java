@@ -79,8 +79,8 @@ public class Morphology implements Serializable {
     public double perimeterToAreaRatio = 0;
     @XmlJavaTypeAdapter(MorphologyDoubleMapAdapter.class)
     public double areaToBoundingRectangleArea = 0;
-    @XmlJavaTypeAdapter(MorphologyDoubleMapAdapter.class)
-    public double equivalentSphericalDiameter = 0;
+//    @XmlJavaTypeAdapter(MorphologyDoubleMapAdapter.class)
+//    public double equivalentSphericalDiameter = 0;
 
     @XmlJavaTypeAdapter(MorphologyDoubleMapAdapter.class)
     public double elongation = 0;
@@ -99,6 +99,12 @@ public class Morphology implements Serializable {
     public double Husmoment6 = 0;
     @XmlJavaTypeAdapter(MorphologyDoubleMapAdapter.class)
     public double Husmoment7 = 0;
+
+    @XmlJavaTypeAdapter(MorphologyDoubleMapAdapter.class)
+    public double MaxFeret = 0;
+    @XmlJavaTypeAdapter(MorphologyDoubleMapAdapter.class)
+    public double MinFeret = 0;
+
 
 
 
@@ -162,13 +168,13 @@ public class Morphology implements Serializable {
         sb.append(String.format("%f,", (float) skew));
         sb.append(String.format("%f,", (float) kurtosis));
         sb.append(String.format("%f,", (float) moment5));
-        sb.append(String.format("%f", (float) moment6));
+        sb.append(String.format("%f,", (float) moment6));
 
         sb.append(String.format("%f,", (float) aspectRatio));
         sb.append(String.format("%f,", (float) equivalentDiameter));
         sb.append(String.format("%f,", (float) perimeterToAreaRatio));
         sb.append(String.format("%f,", (float) areaToBoundingRectangleArea));
-        sb.append(String.format("%f,", (float) equivalentSphericalDiameter));
+//        sb.append(String.format("%f,", (float) equivalentSphericalDiameter));
         sb.append(String.format("%f,", (float) elongation));
         sb.append(String.format("%f,", (float) Husmoment1));
         sb.append(String.format("%f,", (float) Husmoment2));
@@ -176,7 +182,10 @@ public class Morphology implements Serializable {
         sb.append(String.format("%f,", (float) Husmoment4));
         sb.append(String.format("%f,", (float) Husmoment5));
         sb.append(String.format("%f,", (float) Husmoment6));
-        sb.append(String.format("%f", (float) Husmoment7));
+        sb.append(String.format("%f,", (float) Husmoment7));
+
+        sb.append(String.format("%f,", (float) MaxFeret));
+        sb.append(String.format("%f", (float) MinFeret));
 
         // If you are adding more fields:
         // - change the previous last field format string from "%f" to "%f,"
@@ -200,7 +209,8 @@ public class Morphology implements Serializable {
                 "m_mean,m_stddev,m_stddevInvariant," +
                 "m_skewness,m_kurtosis,m_5thmoment,m_6thmoment," +
                 "m_aspectRatio,m_equivalentDiameter,m_perimeterToAreaRatio," +
-                "m_areaToBoundingRectangleArea,m_equivalentSphericalDiameter,m_elongation," +
-                "m_Husmoment1,m_Husmoment2,m_Husmoment3,m_Husmoment4,m_Husmoment5,m_Husmoment6,m_Husmoment7";
+                "m_areaToBoundingRectangleArea,m_elongation," +
+                "m_Husmoment1,m_Husmoment2,m_Husmoment3,m_Husmoment4,m_Husmoment5,m_Husmoment6,m_Husmoment7," +
+                "m_MaxFeret, m_MinFeret";
     }
 }
