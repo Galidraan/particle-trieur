@@ -18,7 +18,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 
 public class ExportMorphologyService {
 
@@ -27,7 +26,7 @@ public class ExportMorphologyService {
             Supervisor supervisor,
             File file,
             boolean exportParameters,
-            boolean exportMorpohology) {
+            boolean exportMorphology) {
 
         ImageProcessingService imageProcessingService = new ImageProcessingService();
         Project project = supervisor.project;
@@ -55,14 +54,14 @@ public class ExportMorphologyService {
                                 headerString += ",p_" + header;
                             }
                         }
-                        if (exportMorpohology) {
+                        if (exportMorphology) {
                             headerString += "," + Morphology.getHeaderStringForCSV();
                         }
                         headerString += "\n";
 
                         // Calculate morphology if needed
                         LinkedHashMap<Particle, Morphology> morphologies = new LinkedHashMap<>();
-                        if (exportMorpohology) {
+                        if (exportMorphology) {
 //                            LinkedHashMap<Particle, Integer> indices = new LinkedHashMap<>();
 
                             //Calculate missing
@@ -119,7 +118,7 @@ public class ExportMorphologyService {
                                     writer.write("," + value);
                                 }
                             }
-                            if (exportMorpohology) {
+                            if (exportMorphology) {
                                 Morphology morphology = null;
                                 String morphologyCSV;
                                 if (morphologies.containsKey(particle)) morphology = morphologies.get(particle);

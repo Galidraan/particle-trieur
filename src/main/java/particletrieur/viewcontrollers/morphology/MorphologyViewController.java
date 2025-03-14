@@ -211,13 +211,13 @@ public class MorphologyViewController implements Initializable {
                 3,
                 0,
                 0));
-        newItems.add(new MorphologyParameterViewModel(
-                "Equivalent Spherical Diameter",
-                m.equivalentSphericalDiameter,
-                n.equivalentSphericalDiameter,
-                3,
-                0,
-                0));
+//        newItems.add(new MorphologyParameterViewModel(
+//                "Equivalent Spherical Diameter",
+//                m.equivalentSphericalDiameter,
+//                n.equivalentSphericalDiameter,
+//                3,
+//                0,
+//                0));
         newItems.add(new MorphologyParameterViewModel(
                 "Elongation",
                 m.elongation,
@@ -240,54 +240,69 @@ public class MorphologyViewController implements Initializable {
                 0,
                 2));
         newItems.add(new MorphologyParameterViewModel(
-                "Hu's invariant 1",
+                "Hu's 1st moment",
                 m.Husmoment1,
                 n.Husmoment1,
                 10,
                 0,
                 0));
         newItems.add(new MorphologyParameterViewModel(
-                "Hu's invariant 2",
+                "Hu's 2nd moment",
                 m.Husmoment2,
                 n.Husmoment2,
                 10,
                 0,
                 0));
         newItems.add(new MorphologyParameterViewModel(
-                "Hu's invariant 3",
+                "Hu's 3rd moment",
                 m.Husmoment3,
                 n.Husmoment3,
                 10,
                 0,
                 0));
         newItems.add(new MorphologyParameterViewModel(
-                "Hu's invariant 4",
+                "Hu's 4th moment",
                 m.Husmoment4,
                 n.Husmoment4,
                 10,
                 0,
                 0));
         newItems.add(new MorphologyParameterViewModel(
-                "Hu's invariant 5",
+                "Hu's 5th moment",
                 m.Husmoment5,
                 n.Husmoment5,
                 10,
                 0,
                 0));
         newItems.add(new MorphologyParameterViewModel(
-                "Hu's invariant 6",
+                "Hu's 6th moment",
                 m.Husmoment6,
                 n.Husmoment6,
                 10,
                 0,
                 0));
         newItems.add(new MorphologyParameterViewModel(
-                "Hu's invariant 7",
+                "Hu's 7th moment",
                 m.Husmoment7,
                 n.Husmoment7,
                 10,
                 0,
                 0));
+        newItems.add(new MorphologyParameterViewModel(
+                "Maximum Feret Diameter",
+                m.MaxFeret,
+                n.MaxFeret,
+                3,
+                3,
+                1));
+        newItems.add(new MorphologyParameterViewModel(
+                "Minimum Feret Diameter",
+                m.MinFeret,
+                n.MinFeret,
+                3,
+                3,
+                1));
+
         items.clear();
         items.addAll(newItems);
     }
