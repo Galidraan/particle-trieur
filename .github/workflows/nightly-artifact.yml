@@ -27,7 +27,7 @@ jobs:
     - name: Create nightly shaded jar
       run: mv target/ParticleTrieur.jar target/ParticleTrieur-nightly.jar
     - name: Archive shaded jar
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v2
       with:
         name: nightly
         path: target/ParticleTrieur-nightly.jar
