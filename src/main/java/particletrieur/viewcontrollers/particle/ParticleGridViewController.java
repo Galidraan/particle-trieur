@@ -1,7 +1,7 @@
 package particletrieur.viewcontrollers.particle;
 
 import com.google.inject.Inject;
-import com.sun.javafx.scene.control.skin.VirtualFlow;
+import javafx.scene.control.skin.VirtualFlow;
 import impl.org.controlsfx.skin.GridViewSkin;
 import javafx.application.Platform;
 import javafx.beans.property.*;
@@ -94,7 +94,7 @@ public class ParticleGridViewController implements Initializable {
         Platform.runLater(() -> {
             virtualFlow = (VirtualFlow<?>) ((GridViewSkin<?>) gridViewParticles.getSkin()).getChildren().get(0);
             virtualFlow.setOnScroll(event -> {
-                int index = virtualFlow.getFirstVisibleCellWithinViewPort().getIndex();
+                int index = virtualFlow.getFirstVisibleCell().getIndex();
                 if (event.getDeltaY() < 0)
                     virtualFlow.scrollTo(index+1);
                 else
@@ -105,15 +105,15 @@ public class ParticleGridViewController implements Initializable {
 
     private void scrollToSelectedForam() {
         int index = selectionViewModel.getParticleIndex(selectionViewModel.getCurrentParticles().get(selectionViewModel.getCurrentParticles().size()-1));
-        int first = virtualFlow.getFirstVisibleCellWithinViewPort().getIndex();
-        int last = virtualFlow.getLastVisibleCellWithinViewPort().getIndex();
+        int first = virtualFlow.getFirstVisibleCell().getIndex();
+        int last = virtualFlow.getLastVisibleCell().getIndex();
         if (index <= first) {
-            while (index <= first && virtualFlow.adjustPixels(-1) < 0) {
-                first = virtualFlow.getFirstVisibleCellWithinViewPort().getIndex();
+            while (index <= first && virtualFlow.scrollPixels(-1) < 0) {
+                first = virtualFlow.getFirstVisibleCell().getIndex();
             }
         } else {
-            while (index >= last && virtualFlow.adjustPixels(1) > 0) {
-                last = virtualFlow.getLastVisibleCellWithinViewPort().getIndex();
+            while (index >= last && virtualFlow.scrollPixels(1) > 0) {
+                last = virtualFlow.getLastVisibleCell().getIndex();
             }
         }
     }

@@ -13,8 +13,8 @@ import particletrieur.models.project.Particle;
 import particletrieur.viewmodels.MainViewModel;
 import particletrieur.viewmodels.SelectionViewModel;
 import com.google.inject.Inject;
-import com.sun.javafx.scene.control.skin.TableViewSkin;
-import com.sun.javafx.scene.control.skin.VirtualFlow;
+import javafx.scene.control.skin.TableViewSkin;
+import javafx.scene.control.skin.VirtualFlow;
 
 import java.io.File;
 import java.net.URL;
@@ -456,11 +456,11 @@ public class ParticleListViewController implements Initializable {
         int first = virtualFlow.getFirstVisibleCell().getIndex();
         int last = virtualFlow.getLastVisibleCell().getIndex();
         if (index <= first) {
-            while (index <= first && virtualFlow.adjustPixels(-1) < 0) {
+            while (index <= first && virtualFlow.scrollPixels(-1) < 0) {
                 first = virtualFlow.getFirstVisibleCell().getIndex();
             }
         } else {
-            while (index >= last && virtualFlow.adjustPixels(1) > 0) {
+            while (index >= last && virtualFlow.scrollPixels(1) > 0) {
                 last = virtualFlow.getLastVisibleCell().getIndex();
             }
         }

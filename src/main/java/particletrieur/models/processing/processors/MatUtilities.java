@@ -22,7 +22,7 @@ public class MatUtilities {
         byte[] temporaryImageInMemory = buffer.toByteArray();
         buffer.close();
         stream.close();
-        return Imgcodecs.imdecode(new MatOfByte(temporaryImageInMemory), Imgcodecs.CV_LOAD_IMAGE_COLOR);
+        return Imgcodecs.imdecode(new MatOfByte(temporaryImageInMemory), Imgcodecs.IMREAD_COLOR);
     }
 
     public static MatOfPoint findLargestContourInMask(Mat mask) {
