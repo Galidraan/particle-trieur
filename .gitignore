@@ -7,3 +7,9 @@ miso.lock
 .idea/workspace.xml
 .idea/shelf/
 dependency-reduced-pom.xml
+
+# Build outputs
+build/
+build-win/
+*.dmg
+*.tar.gz
