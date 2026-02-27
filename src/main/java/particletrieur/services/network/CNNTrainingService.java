@@ -4,7 +4,9 @@ import particletrieur.AppPreferences;
 import particletrieur.controls.dialogs.BasicDialogs;
 import particletrieur.models.network.training.GPUStatus;
 import particletrieur.models.network.training.CNNTrainingScript;
+
 import org.apache.commons.lang3.SystemUtils;
+import particletrieur.utils.ResourceExtractor;
 
 import javax.script.ScriptException;
 import java.io.*;
@@ -44,13 +46,28 @@ public class CNNTrainingService {
             }
             if (new File(pythonBin).exists()) return pythonBin;
 
-            // macOS .app bundle: JAR in Contents/Resources/, python-env also there
+            // macOS .app bundle: JAR in Contents/Resources/, python-env aussi là
             File macAppPython = new File(jarDir, "../Resources/python-env/bin/python");
             if (macAppPython.exists()) return macAppPython.getCanonicalPath();
 
             // Also check one level up (for development setups)
             File devPython = new File(jarDir, "../python-env/bin/python");
             if (devPython.exists()) return devPython.getCanonicalPath();
+
+            // Si python-env n'est trouvé nulle part, tenter extraction depuis le .jar
+            File extractedDir = new File(jarDir, "python-env");
+            File extractedPython = SystemUtils.IS_OS_WINDOWS ?
+                    new File(extractedDir, "python.exe") :
+                    new File(extractedDir, "bin/python");
+            if (!extractedPython.exists()) {
+                try {
+                    ResourceExtractor.extractDirectoryFromJar("/python-env", extractedDir);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    return null;
+                }
+            }
+            if (extractedPython.exists()) return extractedPython.getAbsolutePath();
 
         } catch (Exception e) {
             e.printStackTrace();

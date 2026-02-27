@@ -13,3 +13,10 @@ build/
 build-win/
 *.dmg
 *.tar.gz
+
+# macOS build output
+build-mac/
+
+# macOS Finder metadata
+.DS_Store
+**/.DS_Store
