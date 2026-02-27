@@ -15,10 +15,57 @@ public class CNNTrainingService {
     private static AppPreferences appPrefs = new AppPreferences();
 
     public static String ENV = "miso";
-    public static String PACKAGE = "miso==3.1.25";
+    public static String PACKAGE = "miso==4.0.0";
 
     public CNNTrainingService() {
 
+    }
+
+    /**
+     * Returns the path to the embedded Python binary bundled with the application,
+     * or null if not found.
+     */
+    private static String getEmbeddedPythonPath() {
+        try {
+            String jarPath = CNNTrainingService.class
+                    .getProtectionDomain()
+                    .getCodeSource()
+                    .getLocation()
+                    .toURI()
+                    .getPath();
+            File jarDir = new File(jarPath).getParentFile();
+
+            // Check next to JAR: python-env/bin/python
+            String pythonBin;
+            if (SystemUtils.IS_OS_WINDOWS) {
+                pythonBin = new File(jarDir, "python-env/python.exe").getAbsolutePath();
+            } else {
+                pythonBin = new File(jarDir, "python-env/bin/python").getAbsolutePath();
+            }
+            if (new File(pythonBin).exists()) return pythonBin;
+
+            // macOS .app bundle: JAR in Contents/Resources/, python-env also there
+            File macAppPython = new File(jarDir, "../Resources/python-env/bin/python");
+            if (macAppPython.exists()) return macAppPython.getCanonicalPath();
+
+            // Also check one level up (for development setups)
+            File devPython = new File(jarDir, "../python-env/bin/python");
+            if (devPython.exists()) return devPython.getCanonicalPath();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    /**
+     * Returns true if the application is using the embedded Python environment.
+     */
+    public static boolean isUsingEmbeddedPython() {
+        String embedded = getEmbeddedPythonPath();
+        if (embedded == null) return false;
+        String active = getAnacondaInstallationLocation();
+        return embedded.equals(active);
     }
 
     private static void watch(final Process process) {
@@ -167,24 +214,29 @@ public class CNNTrainingService {
     }
 
     public static String getAnacondaInstallationLocation() {
+        // 1. Embedded Python (bundled with the app) - highest priority
+        String embedded = getEmbeddedPythonPath();
+        if (embedded != null) return embedded;
+
+        // 2. User-configured path
+        String commonA = appPrefs.getPythonPath();
+        if (commonA != null && !commonA.equals("") && new File(commonA).exists()) return commonA;
+
+        // 3. Legacy conda paths (fallback)
         String windowsA = System.getProperty("user.home") + "\\Anaconda3\\envs\\" + ENV + "\\python.exe";
         String windowsB = System.getProperty("user.home") + "\\AppData\\Local\\Continuum\\Anaconda3\\envs\\" + ENV + "\\python.exe";
         String macA = System.getProperty("user.home") + "/anaconda3/envs/" + ENV + "/bin/python";
         String macB = System.getProperty("user.home") + "/opt/anaconda3/envs/" + ENV + "/bin/python";
         String linuxA = System.getProperty("user.home") + "/anaconda3/envs/" + ENV + "/bin/python";
         String linuxB = "/usr/local/anaconda3/envs/" + ENV + "/bin/python";
-        String commonA = appPrefs.getPythonPath();
         if (SystemUtils.IS_OS_WINDOWS) {
-            if (commonA != null && !commonA.equals("") && new File(commonA).exists()) return commonA;
-            else if (new File(windowsA).exists()) return windowsA;
+            if (new File(windowsA).exists()) return windowsA;
             else if (new File(windowsB).exists()) return windowsB;
         } else if (SystemUtils.IS_OS_MAC_OSX) {
-            if (commonA != null && !commonA.equals("") && new File(commonA).exists()) return commonA;
-            else if (new File(macA).exists()) return macA;
+            if (new File(macA).exists()) return macA;
             else if (new File(macB).exists()) return macB;
         } else if (SystemUtils.IS_OS_LINUX) {
-            if (commonA != null && !commonA.equals("") && new File(commonA).exists()) return commonA;
-            else if (new File(linuxA).exists()) return linuxA;
+            if (new File(linuxA).exists()) return linuxA;
             else if (new File(linuxB).exists()) return linuxB;
         }
         return null;
@@ -220,18 +272,22 @@ public class CNNTrainingService {
             showAnacondaNotFoundError();
             return;
         }
-        String basePath = (new File(pythonPath)).getParent();
-        String anacondaPath = (new File(pythonPath)).getParentFile().getParentFile().getParentFile().getPath();
         String terminalCommand;
-        if (SystemUtils.IS_OS_WINDOWS) {
-            terminalCommand = "call \"" + anacondaPath + "\\Scripts\\activate.bat\" " + ENV + " && " + "cd /d \"" + basePath + "\" && python -W ignore -u " + command;
-        } else if (SystemUtils.IS_OS_MAC_OSX) {
-            terminalCommand = "conda activate " + ENV + " && cd \"" + basePath + "\" && python -u " + command;
-        } else if (SystemUtils.IS_OS_LINUX) {
-            terminalCommand = pythonPath + " -u " + command;
-//            terminalCommand = "conda activate " + ENV + " && cd \"" + basePath + "\" && python -u " + command;
+        if (isUsingEmbeddedPython()) {
+            // Embedded Python: call directly, no conda activate needed
+            terminalCommand = "\"" + pythonPath + "\" -W ignore -u " + command;
         } else {
-            throw new RuntimeException("Unsupported OS");
+            String basePath = (new File(pythonPath)).getParent();
+            String anacondaPath = (new File(pythonPath)).getParentFile().getParentFile().getParentFile().getPath();
+            if (SystemUtils.IS_OS_WINDOWS) {
+                terminalCommand = "call \"" + anacondaPath + "\\Scripts\\activate.bat\" " + ENV + " && " + "cd /d \"" + basePath + "\" && python -W ignore -u " + command;
+            } else if (SystemUtils.IS_OS_MAC_OSX) {
+                terminalCommand = "conda activate " + ENV + " && cd \"" + basePath + "\" && python -u " + command;
+            } else if (SystemUtils.IS_OS_LINUX) {
+                terminalCommand = pythonPath + " -u " + command;
+            } else {
+                throw new RuntimeException("Unsupported OS");
+            }
         }
         executeInTerminal(terminalCommand);
     }
@@ -242,30 +298,34 @@ public class CNNTrainingService {
             showAnacondaNotFoundError();
             return;
         }
-        String basePath = (new File(pythonPath)).getParent();
-        String anacondaPath = (new File(pythonPath)).getParentFile().getParentFile().getParentFile().getPath();
         StringBuilder terminalCommand;
-        if (SystemUtils.IS_OS_WINDOWS) {
-            terminalCommand = new StringBuilder("call \"" + anacondaPath + "\\Scripts\\activate.bat\" " + ENV + " && " + "cd /d \"" + basePath + "\"");
-            for (String command : commands) {
-                terminalCommand.append(" && python -W ignore -u ").append(command);
-            }
-        } else if (SystemUtils.IS_OS_MAC_OSX) {
-            terminalCommand = new StringBuilder("conda activate " + ENV + " && cd \"" + basePath + "\"");
-            for (String command : commands) {
-                terminalCommand.append(" && python -u ").append(command);
-            }
-        } else if (SystemUtils.IS_OS_LINUX) {
+        if (isUsingEmbeddedPython()) {
+            // Embedded Python: call directly, no conda activate needed
             terminalCommand = new StringBuilder(":");
             for (String command : commands) {
-                terminalCommand.append(" && ").append(pythonPath).append(" -u ").append(command);
+                terminalCommand.append(" && \"" + pythonPath + "\" -W ignore -u ").append(command);
             }
-//            terminalCommand = new StringBuilder("conda activate " + ENV + " && cd \"" + basePath + "\"");
-//            for (String command : commands) {
-//                terminalCommand.append(" && python -u ").append(command);
-//            }
         } else {
-            throw new RuntimeException("Unsupported OS");
+            String basePath = (new File(pythonPath)).getParent();
+            String anacondaPath = (new File(pythonPath)).getParentFile().getParentFile().getParentFile().getPath();
+            if (SystemUtils.IS_OS_WINDOWS) {
+                terminalCommand = new StringBuilder("call \"" + anacondaPath + "\\Scripts\\activate.bat\" " + ENV + " && " + "cd /d \"" + basePath + "\"");
+                for (String command : commands) {
+                    terminalCommand.append(" && python -W ignore -u ").append(command);
+                }
+            } else if (SystemUtils.IS_OS_MAC_OSX) {
+                terminalCommand = new StringBuilder("conda activate " + ENV + " && cd \"" + basePath + "\"");
+                for (String command : commands) {
+                    terminalCommand.append(" && python -u ").append(command);
+                }
+            } else if (SystemUtils.IS_OS_LINUX) {
+                terminalCommand = new StringBuilder(":");
+                for (String command : commands) {
+                    terminalCommand.append(" && ").append(pythonPath).append(" -u ").append(command);
+                }
+            } else {
+                throw new RuntimeException("Unsupported OS");
+            }
         }
         executeInTerminal(terminalCommand.toString());
     }
@@ -277,11 +337,16 @@ public class CNNTrainingService {
             BufferedWriter writer = new BufferedWriter(new FileWriter(temp));
             writer.write(script);
             writer.close();
-//            executePythonCommand("\"" + temp.getAbsolutePath() + "\"");
-            executePythonCommands(new String[] {
-                    " -m pip install -U " + PACKAGE,
-                    "\"" + temp.getAbsolutePath() + "\""
-            });
+            if (isUsingEmbeddedPython()) {
+                // Miso is already included in the embedded environment
+                executePythonCommand("\"" + temp.getAbsolutePath() + "\"");
+            } else {
+                // External conda: install/update miso before running
+                executePythonCommands(new String[] {
+                        " -m pip install -U " + PACKAGE,
+                        "\"" + temp.getAbsolutePath() + "\""
+                });
+            }
         } catch (Exception ex) {
             BasicDialogs.ShowException("Error launching training", ex);
         }
