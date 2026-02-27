@@ -124,9 +124,9 @@ cat > "$APP_DIR/Info.plist" << 'PLIST_EOF'
     <key>CFBundleIdentifier</key>
     <string>com.microfossil.particletrieur</string>
     <key>CFBundleVersion</key>
-    <string>3.0.5</string>
+    <string>4.0.0</string>
     <key>CFBundleShortVersionString</key>
-    <string>3.0.5</string>
+    <string>4.0.0</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleExecutable</key>

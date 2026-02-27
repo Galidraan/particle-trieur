@@ -17,6 +17,8 @@
             prefHeight="360.0" prefWidth="640.0">
     <VBox spacing="7.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
         <children>
+            <Label text="4.0.0" styleClass="subheader"/>
+            <Label wrapText="true">Self-contained macOS ARM build with embedded Python and miso library. JavaFX included via Maven. Universal JAR (Windows, Linux, macOS Intel/ARM). No conda installation required.</Label>
             <Label text="3.0.5e" styleClass="subheader"/>
             <Label wrapText="true">Update miso version. Number of python processes when training has been reduced to avoir memory issues</Label>
             <Label text="3.0.5d" styleClass="subheader"/>

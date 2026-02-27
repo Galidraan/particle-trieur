@@ -1,7 +1,0 @@
-# Ignore miso-src git metadata (we include the source, not the git history)
-python/miso-src/.git/
-
-# Build outputs
-build/
-*.tar.gz
-*.dmg
