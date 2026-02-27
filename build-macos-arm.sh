@@ -79,8 +79,18 @@ rm -rf "$BUILD_DIR/$APP_NAME.app"
 mkdir -p "$APP_DIR/MacOS"
 mkdir -p "$APP_DIR/Resources"
 
+
 # Copy JAR
 cp "$SCRIPT_DIR/target/ParticleTrieur.jar" "$APP_DIR/Resources/"
+
+# Copy app icon (.icns)
+if [ -f "$SCRIPT_DIR/src/main/resources/mac/ParticleTrieur.icns" ]; then
+    cp "$SCRIPT_DIR/src/main/resources/mac/ParticleTrieur.icns" "$APP_DIR/Resources/ParticleTrieur.icns"
+elif [ -f "$SCRIPT_DIR/src/main/resources/icons/ParticleTrieur.icns" ]; then
+    cp "$SCRIPT_DIR/src/main/resources/icons/ParticleTrieur.icns" "$APP_DIR/Resources/ParticleTrieur.icns"
+else
+    echo "Warning: ParticleTrieur.icns not found, app will use default icon."
+fi
 
 # Unpack Python environment
 echo "  -> Extracting Python environment..."
@@ -111,6 +121,7 @@ exec "$JAVA_HOME/bin/java" \
 LAUNCHER_EOF
 chmod +x "$APP_DIR/MacOS/$APP_NAME"
 
+
 # Create Info.plist
 cat > "$APP_DIR/Info.plist" << 'PLIST_EOF'
 <?xml version="1.0" encoding="UTF-8"?>
@@ -131,6 +142,8 @@ cat > "$APP_DIR/Info.plist" << 'PLIST_EOF'
     <string>APPL</string>
     <key>CFBundleExecutable</key>
     <string>ParticleTrieur</string>
+    <key>CFBundleIconFile</key>
+    <string>ParticleTrieur.icns</string>
     <key>LSMinimumSystemVersion</key>
     <string>12.0</string>
     <key>LSArchitecturePriority</key>

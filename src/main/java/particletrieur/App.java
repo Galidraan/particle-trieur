@@ -60,24 +60,32 @@ public class App extends Application {
         instance = this;
         this.stage = stage;
 
+        System.out.println("[ParticleTrieur] Démarrage de l'application...");
+
         if (SystemUtils.IS_OS_MAC_OSX) {
+            System.out.println("[ParticleTrieur] OS détecté : macOS");
             JFrame frame = new JFrame();
         }
 
         Locale.setDefault(new Locale("en", "AU"));
 
-        //ResourceBundle bundle = ResourceBundle.getBundle("ordervschaos.particle.bundles.Lang", new Locale("fr"));
-        ResourceBundle bundle = ResourceBundle.getBundle("bundles.Lang");
-        FXMLLoader loader = new FXMLLoader(getClass().getResource("/views/App.fxml"), bundle);
-        loader.setControllerFactory(instantiatedClass -> injector.getInstance(instantiatedClass));
-        Parent root = loader.load();
-        stage.setTitle("Particle Trieur " + App.VERSION);
-        stage.getIcons().add(new Image(App.class.getResourceAsStream("/icons/icon.png")));
-        Scene scene = new Scene(root);
-        scene.getStylesheets().add(getClass().getResource("/styles/style.css").toExternalForm());
-        AppController controller = loader.getController();
-        stage.setScene(scene);
-        stage.show();
+        try {
+            ResourceBundle bundle = ResourceBundle.getBundle("bundles.Lang");
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/views/App.fxml"), bundle);
+            loader.setControllerFactory(instantiatedClass -> injector.getInstance(instantiatedClass));
+            Parent root = loader.load();
+            stage.setTitle("Particle Trieur " + App.VERSION);
+            stage.getIcons().add(new Image(App.class.getResourceAsStream("/icons/icon.png")));
+            Scene scene = new Scene(root);
+            scene.getStylesheets().add(getClass().getResource("/styles/style.css").toExternalForm());
+            AppController controller = loader.getController();
+            stage.setScene(scene);
+            stage.show();
+            System.out.println("[ParticleTrieur] Interface lancée avec succès.");
+        } catch (Exception e) {
+            System.err.println("[ParticleTrieur] Erreur au lancement : " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 
     @Override
