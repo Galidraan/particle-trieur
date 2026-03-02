@@ -11,12 +11,19 @@ dependency-reduced-pom.xml
 # Build outputs
 build/
 build-win/
+build-mac/
+build-installer/
+dist/
+dist/ParticleTrieur.jar
+.build-cache/
 *.dmg
 *.tar.gz
-
-# macOS build output
-build-mac/
+*.deb
+*.rpm
+*.jar
+*.exe
 
 # macOS Finder metadata
 .DS_Store
 **/.DS_Store
+*.DS_Store

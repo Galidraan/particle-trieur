@@ -1,0 +1,252 @@
+# =============================================================================
+# ParticleTrieur — Build automatique d'installateurs pour toutes les plateformes
+#
+# Ce workflow génère des installateurs natifs pour :
+#   - macOS ARM64 (Apple Silicon) → .dmg
+#   - macOS x86_64 (Intel)        → .dmg
+#   - Windows x64                 → .exe
+#   - Linux x64                   → .deb
+#
+# Déclenchement :
+#   - Push d'un tag v* (ex: v4.0.0)
+#   - Manuel depuis l'onglet Actions
+#
+# Les installateurs sont uploadés comme artefacts de la release GitHub.
+# =============================================================================
+
+name: Build Installers
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      python_version:
+        description: 'Python version'
+        default: '3.11.9'
+      python_build_tag:
+        description: 'python-build-standalone release tag'
+        default: '20240726'
+
+env:
+  APP_NAME: ParticleTrieur
+  APP_VERSION: 4.0.0
+  MAIN_CLASS: particletrieur.Launcher
+  JAR_NAME: ParticleTrieur.jar
+  PYTHON_VERSION: ${{ github.event.inputs.python_version || '3.11.9' }}
+  PYTHON_BUILD_TAG: ${{ github.event.inputs.python_build_tag || '20240726' }}
+
+jobs:
+
+  # ---------------------------------------------------------------------------
+  # Étape 1 : Compiler le fat JAR (une seule fois, partagé entre les jobs)
+  # ---------------------------------------------------------------------------
+  build-jar:
+    name: Build Fat JAR
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'zulu'
+          cache: 'maven'
+
+      - name: Build fat JAR
+        run: mvn clean package -q -DskipTests
+
+      - name: Upload JAR artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: fat-jar
+          path: target/${{ env.JAR_NAME }}
+          retention-days: 1
+
+  # ---------------------------------------------------------------------------
+  # Étape 2 : Créer les installateurs par plateforme
+  # ---------------------------------------------------------------------------
+  build-installer:
+    name: ${{ matrix.display_name }}
+    needs: build-jar
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-14
+            display_name: "macOS ARM64 (.dmg)"
+            platform: mac-arm64
+            python_triple: aarch64-apple-darwin
+            installer_type: dmg
+            icon: src/main/resources/mac/ParticleTrieur.icns
+            python_bin: python-env/bin/python3
+            extra_opts: "--mac-package-name ParticleTrieur"
+
+          - os: macos-13
+            display_name: "macOS x86_64 (.dmg)"
+            platform: mac-x64
+            python_triple: x86_64-apple-darwin
+            installer_type: dmg
+            icon: src/main/resources/mac/ParticleTrieur.icns
+            python_bin: python-env/bin/python3
+            extra_opts: "--mac-package-name ParticleTrieur"
+
+          - os: windows-latest
+            display_name: "Windows x64 (.exe)"
+            platform: win-x64
+            python_triple: x86_64-pc-windows-msvc
+            installer_type: exe
+            icon: src/main/resources/windows/ParticleTrieur.ico
+            python_bin: python-env/python.exe
+            extra_opts: "--win-dir-chooser --win-menu --win-shortcut"
+
+          - os: ubuntu-latest
+            display_name: "Linux x64 (.deb)"
+            platform: linux-x64
+            python_triple: x86_64-unknown-linux-gnu
+            installer_type: deb
+            icon: src/main/resources/icons/icon.png
+            python_bin: python-env/bin/python3
+            extra_opts: "--linux-shortcut --linux-menu-group Science"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'zulu'
+
+      - name: Download fat JAR
+        uses: actions/download-artifact@v4
+        with:
+          name: fat-jar
+          path: dist/
+
+      # --- Python standalone ---
+
+      - name: Cache Python standalone
+        uses: actions/cache@v4
+        id: python-cache
+        with:
+          path: .build-cache/
+          key: python-${{ env.PYTHON_VERSION }}-${{ env.PYTHON_BUILD_TAG }}-${{ matrix.python_triple }}
+
+      - name: Download Python standalone
+        if: steps.python-cache.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          mkdir -p .build-cache
+          FILENAME="cpython-${PYTHON_VERSION}+${PYTHON_BUILD_TAG}-${{ matrix.python_triple }}-install_only.tar.gz"
+          URL="https://github.com/indygreg/python-build-standalone/releases/download/${PYTHON_BUILD_TAG}/${FILENAME}"
+          echo "Downloading $URL"
+          curl -L --progress-bar -o ".build-cache/${FILENAME}" "$URL"
+
+      - name: Extract Python and install miso
+        shell: bash
+        run: |
+          FILENAME="cpython-${PYTHON_VERSION}+${PYTHON_BUILD_TAG}-${{ matrix.python_triple }}-install_only.tar.gz"
+
+          # Extract
+          mkdir -p dist/python-env
+          tar xzf ".build-cache/${FILENAME}" --strip-components=1 -C dist/python-env
+
+          # Create python symlink on Unix if needed
+          if [ -f "dist/python-env/bin/python3" ] && [ ! -f "dist/python-env/bin/python" ]; then
+            ln -sf python3 dist/python-env/bin/python
+          fi
+
+          # Install miso
+          PYTHON="${{ matrix.python_bin }}"
+          "dist/$PYTHON" -m pip install --upgrade pip --quiet
+          "dist/$PYTHON" -m pip install ./python/miso-src/ --quiet
+
+          # Verify
+          "dist/$PYTHON" -c "import miso; print('miso OK')"
+
+          # Cleanup to reduce size
+          find dist/python-env -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true
+          find dist/python-env -name "*.pyc" -delete 2>/dev/null || true
+          find dist/python-env -name "*.dist-info" -type d -exec rm -rf {} + 2>/dev/null || true
+
+          echo "Python env size:"
+          du -sh dist/python-env
+
+      # --- jpackage ---
+
+      - name: Create installer with jpackage
+        shell: bash
+        run: |
+          mkdir -p build-installer
+
+          # Build the icon option
+          ICON_OPT=""
+          if [ -f "${{ matrix.icon }}" ]; then
+            ICON_OPT="--icon ${{ matrix.icon }}"
+          fi
+
+          jpackage \
+            --type ${{ matrix.installer_type }} \
+            --input dist \
+            --name "$APP_NAME" \
+            --main-jar "$JAR_NAME" \
+            --main-class "$MAIN_CLASS" \
+            --java-options "-Xmx4G" \
+            --app-version "$APP_VERSION" \
+            --dest build-installer \
+            $ICON_OPT \
+            ${{ matrix.extra_opts }}
+
+      - name: Upload installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: installer-${{ matrix.platform }}
+          path: |
+            build-installer/*.${{ matrix.installer_type }}
+          retention-days: 30
+
+  # ---------------------------------------------------------------------------
+  # Étape 3 : Créer une release GitHub avec tous les installateurs
+  # ---------------------------------------------------------------------------
+  release:
+    name: Create GitHub Release
+    needs: build-installer
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download all installers
+        uses: actions/download-artifact@v4
+        with:
+          pattern: installer-*
+          path: installers/
+          merge-multiple: true
+
+      - name: List installers
+        run: find installers/ -type f | head -20
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "ParticleTrieur v${{ env.APP_VERSION }}"
+          body: |
+            ## ParticleTrieur v${{ env.APP_VERSION }}
+
+            ### Installation
+            Téléchargez l'installateur correspondant à votre système :
+
+            | Système | Fichier | Instructions |
+            |---------|---------|-------------|
+            | **macOS (Apple Silicon)** | `.dmg` | Ouvrir le DMG → Glisser dans Applications |
+            | **macOS (Intel)** | `.dmg` | Ouvrir le DMG → Glisser dans Applications |
+            | **Windows** | `.exe` | Double-cliquer → Suivre l'assistant |
+            | **Linux** | `.deb` | `sudo dpkg -i ParticleTrieur_*.deb` |
+
+            Aucune installation supplémentaire requise (Java, Python, etc. sont inclus).
+          files: installers/*
+          draft: true
