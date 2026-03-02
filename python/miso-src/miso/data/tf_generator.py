@@ -1,6 +1,5 @@
 import numpy as np
 import tensorflow as tf
-import tensorflow.keras.backend as K
 from imblearn.under_sampling import RandomUnderSampler
 
 
@@ -114,7 +113,7 @@ class TFGenerator(object):
         Note that the map function has to take a Tensor input
         """
         if self.map_fn is not None:
-            ds = ds.map(lambda x, y: (self.map_fn(x), y), num_parallel_calls=tf.data.experimental.AUTOTUNE)
+            ds = ds.map(lambda x, y: (self.map_fn(x), y), num_parallel_calls=tf.data.AUTOTUNE)
         if self.one_shot is False:
             ds = ds.repeat()
         ds = ds.batch(self.batch_size).prefetch(self.prefetch)

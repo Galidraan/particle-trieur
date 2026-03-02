@@ -1,7 +1,7 @@
 from typing import NamedTuple
 
 from sklearn.model_selection import train_test_split
-from keras.utils import to_categorical
+from tensorflow.keras.utils import to_categorical
 import numpy as np
 from scipy.stats.mstats import gmean
 

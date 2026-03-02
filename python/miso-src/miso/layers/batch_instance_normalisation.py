@@ -52,10 +52,10 @@ class BatchInstanceNormalisation(Layer):
     def call(self, x):
         eps = 1e-5
 
-        batch_mean, batch_sigma = tf.nn.moments(x, axes=[0, 1, 2], keep_dims=True)
+        batch_mean, batch_sigma = tf.nn.moments(x, axes=[0, 1, 2], keepdims=True)
         x_batch = (x - batch_mean) / (tf.sqrt(batch_sigma + eps))
 
-        ins_mean, ins_sigma = tf.nn.moments(x, axes=[1, 2], keep_dims=True)
+        ins_mean, ins_sigma = tf.nn.moments(x, axes=[1, 2], keepdims=True)
         x_ins = (x - ins_mean) / (tf.sqrt(ins_sigma + eps))
 
         x_hat = self.rho * x_batch + (1 - self.rho) * x_ins

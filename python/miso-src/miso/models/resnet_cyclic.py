@@ -289,7 +289,7 @@ def ResNetCyclic(model_params,
     #     x = tfkeras.layers.Activation('softmax', name='softmax')(x)
     # Ensure that the model takes into account any potential predecessors of `input_tensor`.
     if input_tensor is not None:
-        inputs = tfkeras.keras_utils.get_source_inputs(input_tensor)
+        inputs = tf.nest.flatten(input_tensor)[0] if hasattr(input_tensor, '_keras_history') else input_tensor
     else:
         inputs = img_input
 

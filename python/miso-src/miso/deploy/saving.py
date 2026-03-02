@@ -39,13 +39,11 @@ def convert_to_inference_mode(model, model_factory):
 
 
 def convert_to_inference_mode_tf2(model, model_factory):
-    # Trick to get around bugs in tensorflow 1.14.0
-    # https://github.com/tensorflow/tensorflow/issues/31331#issuecomment-518655879
+    # Re-create the model in inference mode
     with tempfile.TemporaryDirectory() as dirpath:
         weights_filename = os.path.join(dirpath, "weights.tf")
         model.save_weights(weights_filename)
         K.clear_session()
-        K.set_learning_phase(0)
         model = model_factory()
         model.load_weights(weights_filename)
         remove(weights_filename)

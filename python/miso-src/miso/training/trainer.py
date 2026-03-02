@@ -12,7 +12,7 @@ warnings.simplefilter(action="ignore", category=FutureWarning)
 import time
 import datetime
 from collections import OrderedDict
-import keras.backend as K
+import tensorflow.keras.backend as K
 from sklearn.manifold import TSNE
 
 from miso.data.training_dataset import TrainingDataset

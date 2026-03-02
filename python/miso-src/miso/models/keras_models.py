@@ -1,8 +1,8 @@
 import collections
 import tensorflow as tf
 
-from keras import applications as ka, Input, Model
-from keras.layers import Lambda, Dropout, Dense, BatchNormalization
+from tensorflow.keras import applications as ka, Input, Model
+from tensorflow.keras.layers import Lambda, Dropout, Dense, BatchNormalization
 
 from miso.layers.cyclic import CyclicGainSlice12, CyclicDensePoolN, CyclicSlice4, CyclicDensePool4
 

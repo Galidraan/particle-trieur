@@ -1,7 +1,7 @@
 import math
 
-from keras import Model
-from keras.optimizers import SGD, Adam
+from tensorflow.keras import Model
+from tensorflow.keras.optimizers import SGD, Adam
 
 from miso.models.keras_models import head, tail, KERAS_MODEL_PARAMETERS
 from miso.models.base_cyclic import *
