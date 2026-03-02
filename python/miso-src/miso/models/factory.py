@@ -17,11 +17,10 @@ except ImportError:
 def create_optimizer(tp: MisoParameters):
     if tp.optimizer.name == "sgd":
         opt = SGD(learning_rate=tp.optimizer.learning_rate,
-                  decay=tp.optimizer.decay,
                   momentum=tp.optimizer.momentum,
                   nesterov=tp.optimizer.nesterov)
     elif tp.optimizer.name == "adam":
-        opt = Adam(learning_rate=tp.optimizer.learning_rate, decay=tp.optimizer.decay)
+        opt = Adam(learning_rate=tp.optimizer.learning_rate)
     else:
         raise ValueError(f"The optimizer {tp.optimizer.name} is not supported, valid optimizers are: sgd, adam")
     return opt
@@ -39,7 +38,7 @@ def generate(tp: MisoParameters):
                             conv_activation=tp.cnn.activation,
                             use_batch_norm=tp.cnn.use_batch_norm,
                             global_pooling=tp.cnn.global_pooling)
-        opt = Adam(lr=0.001)
+        opt = Adam(learning_rate=0.001)
         model.compile(optimizer=opt, loss='categorical_crossentropy', metrics=['accuracy'])
 
     # ResNet Cyclic - custom network created at CEREGE specifically for foraminifera by adding cyclic layers
@@ -115,9 +114,24 @@ def generate_tl(tp: MisoParameters):
 
 
 def combine_head_and_tail(model_head, model_tail):
-    return Model(inputs=model_head.input, outputs=model_tail.call(model_head.output))
+    inputs = model_head.input
+    x = model_head(inputs)
+    outputs = model_tail(x)
+    return Model(inputs=inputs, outputs=outputs)
 
 
 def generate_vector_from_model(model, tp):
-    vector_model = Model(model.inputs, model.get_layer(index=-2).output)
-    return vector_model
+    # The combined model structure is: input → head_model → tail_model
+    # The tail is: Input → Dropout → Dense(512, relu) → Dense(num_classes, softmax)
+    # We want the output of Dense(512) — i.e. the penultimate Dense layer.
+    #
+    # In the combined model, model.layers looks like: [InputLayer, head_model, tail_model]
+    # We extract the tail's second-to-last layer output.
+    tail_model = model.layers[-1]  # the tail sub-model
+    # Build the vector model: same input → head → tail up to Dense(512)
+    inputs = model.input
+    x = model.layers[1](inputs)  # head sub-model
+    # Run through tail layers, stopping before the last Dense (softmax)
+    for layer in tail_model.layers[1:-1]:  # skip tail Input, skip last Dense
+        x = layer(x)
+    return Model(inputs=inputs, outputs=x)

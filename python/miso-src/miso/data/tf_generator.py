@@ -133,7 +133,7 @@ class TFGenerator(object):
         # Create dataset
         dataset = tf.data.Dataset.from_tensor_slices((images_tensor, onehots_tensor))
         if self.map_fn is not None:
-            dataset = dataset.map(lambda x, y: (self.map_fn(x), y), num_parallel_calls=tf.data.experimental.AUTOTUNE)
+            dataset = dataset.map(lambda x, y: (self.map_fn(x), y), num_parallel_calls=tf.data.AUTOTUNE)
         if self.one_shot:
             dataset = dataset.repeat(1)
         else:
@@ -163,7 +163,7 @@ class TFGenerator(object):
                                                 output_types=self.data_dtype,
                                                 output_shapes=self.data[0].shape)
         if self.map_fn is not None:
-            ds = ds.map(lambda x, y: (self.map_fn(x), y), num_parallel_calls=tf.data.experimental.AUTOTUNE)
+            ds = ds.map(lambda x, y: (self.map_fn(x), y), num_parallel_calls=tf.data.AUTOTUNE)
         if self.one_shot is False:
             ds = ds.repeat()
         ds = ds.batch(self.batch_size).prefetch(self.prefetch)
