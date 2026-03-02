@@ -155,10 +155,8 @@ if errorlevel 1 (
 )
 
 REM Nettoyage pour reduire la taille
+REM NB: ne pas supprimer __pycache__ -- TensorFlow en a besoin pour s'initialiser
 echo   Nettoyage de l'environnement Python ...
-for /d /r "%DIST_DIR%\python-env" %%d in (__pycache__) do (
-    if exist "%%d" rmdir /s /q "%%d" 2>nul
-)
 for /d /r "%DIST_DIR%\python-env" %%d in (*.dist-info) do (
     if exist "%%d" rmdir /s /q "%%d" 2>nul
 )

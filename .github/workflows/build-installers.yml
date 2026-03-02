@@ -169,8 +169,7 @@ jobs:
           "dist/$PYTHON" -c "import miso; print('miso OK')"
 
           # Cleanup to reduce size
-          find dist/python-env -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true
-          find dist/python-env -name "*.pyc" -delete 2>/dev/null || true
+          # NB: do NOT remove __pycache__ or .pyc — TensorFlow needs them to initialize
           find dist/python-env -name "*.dist-info" -type d -exec rm -rf {} + 2>/dev/null || true
 
           echo "Python env size:"

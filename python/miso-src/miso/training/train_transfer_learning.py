@@ -120,7 +120,6 @@ def train_transfer_learning(tp: MisoParameters, ds: TrainingDataset):
                              epochs=tp.training.max_epochs,
                              verbose=0,
                              shuffle=False,
-                             max_queue_size=1,
                              class_weight=class_weights,
                              callbacks=[alr_cb])
     # Elapsed time

@@ -194,11 +194,8 @@ else
 fi
 
 # Nettoyage pour réduire la taille
+# NB: ne pas supprimer __pycache__ ni .pyc — TensorFlow en a besoin pour s'initialiser
 echo "  Nettoyage de l'environnement Python ..."
-find "$DIST_DIR/python-env" -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true
-find "$DIST_DIR/python-env" -name "*.pyc" -delete 2>/dev/null || true
-find "$DIST_DIR/python-env" -name "test" -type d -path "*/site-packages/*/test" -exec rm -rf {} + 2>/dev/null || true
-find "$DIST_DIR/python-env" -name "tests" -type d -path "*/site-packages/*/tests" -exec rm -rf {} + 2>/dev/null || true
 find "$DIST_DIR/python-env" -name "*.dist-info" -type d -exec rm -rf {} + 2>/dev/null || true
 rm -rf "$DIST_DIR/python-env/share/man" 2>/dev/null || true
 rm -rf "$DIST_DIR/python-env/share/doc" 2>/dev/null || true

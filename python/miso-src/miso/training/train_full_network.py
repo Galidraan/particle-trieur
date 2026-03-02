@@ -127,7 +127,6 @@ def train_full_network(tp: MisoParameters, ds: TrainingDataset, save_dir: str):
         epochs=tp.training.max_epochs,
         verbose=0,
         shuffle=False,
-        max_queue_size=1,
         class_weight=class_weights,
         callbacks=[alr_cb],
     )
