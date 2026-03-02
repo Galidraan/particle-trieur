@@ -119,11 +119,5 @@ def combine_head_and_tail(model_head, model_tail):
 
 
 def generate_vector_from_model(model, tp):
-    try:
-        vector_model = Model(model.inputs, model.get_layer(index=-2).get_output_at(1))
-        return vector_model
-    except:
-        pass
-
-    vector_model = Model(model.inputs, model.get_layer(index=-2).get_output_at(0))
+    vector_model = Model(model.inputs, model.get_layer(index=-2).output)
     return vector_model
