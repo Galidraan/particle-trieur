@@ -41,7 +41,7 @@ def convert_to_inference_mode(model, model_factory):
 def convert_to_inference_mode_tf2(model, model_factory):
     # Re-create the model in inference mode
     with tempfile.TemporaryDirectory() as dirpath:
-        weights_filename = os.path.join(dirpath, "weights.tf")
+        weights_filename = os.path.join(dirpath, "weights.weights.h5")
         model.save_weights(weights_filename)
         K.clear_session()
         model = model_factory()
